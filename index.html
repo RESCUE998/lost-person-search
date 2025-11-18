@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>走失人员搜索助手</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>走失人员搜索助手</h1>
+    <p>输入基本信息，快速估算搜索范围（仅作参考，请立即报警！）</p>
+
+    <form id="form">
+      <label>年龄（岁）<input type="number" id="age" min="0" max="120" value="30" required /></label>
+      <label>性别
+        <select id="gender">
+          <option value="M">男</option>
+          <option value="F">女</option>
+        </select>
+      </label>
+      <label>走失时长（小时）<input type="number" id="duration" min="0.5" step="0.5" value="2" required /></label>
+
+      <button type="submit">计算搜索范围</button>
+    </form>
+
+    <div id="result" class="result hidden">
+      <h2> 估算结果</h2>
+      <p><strong>步行最大距离：</strong><span id="walkDist"></span> 公里</p>
+      <p><strong>公交最大距离：</strong><span id="busDist"></span> 公里</p>
+      <p class="highlight"><strong> 建议搜索半径：</strong><span id="radius"></span> 公里</p>
+      <div class="tips">
+        <p> <strong>温馨提示：</strong></p>
+        <ul>
+          <li>请立即拨打 <strong>110 报警</strong>！</li>
+          <li>老人/儿童重点搜 <strong>1公里内</strong>（楼道、车底、小卖部）</li>
+          <li>查看附近 <strong>公交站、便利店、公园、医院</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <canvas id="mapCanvas" width="400" height="400"></canvas>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
