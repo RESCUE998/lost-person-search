@@ -1,47 +1,839 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>走失人员搜索助手</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>走失人员行走距离计算器</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card-bg: #f9f9fb;
+      --text: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --border: #e5e5ea;
+      --accent: #007aff;
+      --warning: #ff3b30;
+      --info: #5e5ce6;
+      --disabled: #c7c7cc;
+      --radius: 16px;
+      --item-radius: 8px;
+      --shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    [data-theme="dark"] {
+      --bg: #000000;
+      --card-bg: #1c1c1e;
+      --text: #f5f5f7;
+      --text-secondary: #aeaeb2;
+      --border: #3a3a3c;
+      --shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro SC', 'PingFang SC', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: clamp(24px, 5vw, 28px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      background: linear-gradient(to right, var(--text), var(--text-secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    label {
+      display: block;
+      margin: 22px 0 10px;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    select,
+    input[type="number"],
+    input[type="time"] {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 17px;
+      appearance: none;
+    }
+
+    select:focus,
+    input[type="number"]:focus,
+    input[type="time"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,122,255,0.15);
+    }
+
+    .gender-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .gender-group label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: normal;
+      margin: 0;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-weight: normal;
+      margin-top: 8px;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .checkbox-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-left: 28px;
+      margin-top: -6px;
+    }
+
+    button[type="submit"] {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 18px;
+      font-size: 17px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button[type="submit"]:hover {
+      background: #0062cc;
+    }
+
+    button[type="submit"]:active {
+      transform: scale(0.99);
+    }
+
+    #resultCard {
+      display: none;
+    }
+
+    .result-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .result-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--item-radius);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 70px;
+      transition: border-color 0.2s;
+    }
+
+    .result-item:hover {
+      border-color: var(--accent);
+    }
+
+    .result-item-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .result-item-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.3;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .unavailable-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(199, 199, 204, 0.15);
+      color: var(--text-secondary);
+      line-height: 1.3;
+      text-align: center;
+    }
+
+    .abnormal-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255, 59, 48, 0.15);
+      color: var(--warning);
+      line-height: 1.3;
+    }
+
+    .suggestion-banner {
+      background: rgba(0, 122, 255, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 14px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .suggestion-banner.warning {
+      background: rgba(255, 59, 48, 0.1);
+      border-left-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .suggestion-banner.info {
+      background: rgba(94, 92, 230, 0.1);
+      border-left-color: var(--info);
+      color: var(--text);
+    }
+
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 8px 0;
+      text-align: left;
+      font-weight: 600;
+      outline: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-btn::after {
+      content: "▼";
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-btn.expanded::after {
+      transform: rotate(180deg);
+    }
+
+    footer {
+      margin-top: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .gender-group { flex-direction: column; }
+      .container { padding: 16px; }
+      .results-grid { grid-template-columns: 1fr; }
+      .result-item-value { font-size: 17px; }
+    }
+
+    [data-theme="dark"] .card {
+      background: #1e1e20;
+    }
+
+    [data-theme="dark"] .result-item {
+      background: #161618;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>走失人员搜索助手</h1>
-    <p>输入基本信息，快速估算搜索范围（仅作参考，请立即报警！）</p>
+    <div class="header">
+      <h1>失踪人员搜索支援工具<br><span style="font-size:16px;font-weight:400;color:var(--text-secondary);">(仅限专业搜救人员使用)</span></h1>
+      <button id="themeToggle" class="theme-toggle" aria-label="切换主题">🌓</button>
+    </div>
 
-    <form id="form">
-      <label>年龄（岁）<input type="number" id="age" min="0" max="120" value="30" required /></label>
-      <label>性别
-        <select id="gender">
-          <option value="M">男</option>
-          <option value="F">女</option>
+    <div class="card">
+      <form id="searchForm">
+        <label for="ageInput">年龄（岁）</label>
+        <input type="number" id="ageInput" min="1" max="120" value="30" />
+
+        <label>性别</label>
+        <div class="gender-group">
+          <label><input type="radio" name="gender" value="male" checked /> 男</label>
+          <label><input type="radio" name="gender" value="female" /> 女</label>
+        </div>
+
+        <label for="durationInput">失踪时间（小时）</label>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:-8px;">
+          注：指从“最后出现时间”到当前的时间差。
+        </p>
+        <input type="number" id="durationInput" min="0.1" step="0.1" value="6" />
+
+        <label for="lastSeenTime">最后出现时间（24小时制）</label>
+        <input type="time" id="lastSeenTime" value="14:00" />
+
+        <div class="checkbox-label">
+          <input type="checkbox" id="isNightActive" />
+          <span>该人员可能在夜间活动（如精神异常、逃亡、已知夜行等）</span>
+        </div>
+        <p class="checkbox-desc">
+          勾选后将忽略22:00–6:00的夜间停走规则。
+        </p>
+
+        <label for="walkMode">行走模式</label>
+        <select id="walkMode">
+          <option value="intermittent" selected>间歇行走（默认，含休息/躲藏）</option>
+          <option value="continuous">持续行走（全程不停，极端情况）</option>
         </select>
-      </label>
-      <label>走失时长（小时）<input type="number" id="duration" min="0.5" step="0.5" value="2" required /></label>
 
-      <button type="submit">计算搜索范围</button>
-    </form>
+        <label for="injuryLevel">受伤状态</label>
+        <select id="injuryLevel">
+          <option value="none" selected>无伤（正常行动）</option>
+          <option value="minor">轻伤（可行走，略受影响）</option>
+          <option value="moderate">中伤（行动缓慢，需休息）</option>
+          <option value="severe">重伤（极度困难，几乎无法移动）</option>
+        </select>
 
-    <div id="result" class="result hidden">
-      <h2> 估算结果</h2>
-      <p><strong>步行最大距离：</strong><span id="walkDist"></span> 公里</p>
-      <p><strong>公交最大距离：</strong><span id="busDist"></span> 公里</p>
-      <p class="highlight"><strong> 建议搜索半径：</strong><span id="radius"></span> 公里</p>
-      <div class="tips">
-        <p> <strong>温馨提示：</strong></p>
-        <ul>
-          <li>请立即拨打 <strong>110 报警</strong>！</li>
-          <li>老人/儿童重点搜 <strong>1公里内</strong>（楼道、车底、小卖部）</li>
-          <li>查看附近 <strong>公交站、便利店、公园、医院</strong></li>
-        </ul>
+        <label for="loadLevel">携带物品负重</label>
+        <select id="loadLevel">
+          <option value="none" selected>无负重（空手或轻便包）</option>
+          <option value="light">轻装（背包 ≤5kg）</option>
+          <option value="medium">中等（行李/物资 5–15kg）</option>
+          <option value="heavy">重装（装备/物资 >15kg 或拖拽物品）</option>
+        </select>
+
+        <label for="terrainSelect">地形</label>
+        <select id="terrainSelect">
+          <option value="city">城市中心</option>
+          <option value="suburb">城市郊区</option>
+          <option value="town">乡镇/集镇</option>
+          <option value="village">农村/村庄</option>
+          <option value="forest">林区/灌木丛</option>
+          <option value="mountain">山地/野外</option>
+        </select>
+
+        <label for="weatherSelect">天气</label>
+        <select id="weatherSelect">
+          <option value="clear">晴</option>
+          <option value="rain">雨</option>
+          <option value="snow">雪</option>
+          <option value="extreme">极端（暴雨/暴雪）</option>
+        </select>
+
+        <label for="tempSelect">气温</label>
+        <select id="tempSelect">
+          <option value="hot">炎热（>35℃）</option>
+          <option value="normal" selected>正常（10～35℃）</option>
+          <option value="cold">寒冷（0～10℃）</option>
+          <option value="freezing">严寒（<0℃）</option>
+        </select>
+
+        <label for="customSpeed">自定义步行速度（米/分钟）</label>
+        <input type="number" id="customSpeed" min="10" max="120" placeholder="留空则自动计算" />
+
+        <label for="radiusBuffer">搜索半径冗余系数</label>
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:-8px;">
+          默认1.2（+20%），建议范围1.0~2.0。数值越大覆盖越广，但资源消耗越高。
+        </p>
+        <input type="number" id="radiusBuffer" min="1.0" max="3.0" step="0.1" value="1.2" />
+
+        <button type="submit">计算搜索范围</button>
+      </form>
+    </div>
+
+    <div class="card" id="resultCard">
+      <div class="result-title">估算结果</div>
+      <div class="results-grid" id="resultsGrid"></div>
+      <div id="transportWarning" style="margin-top:12px; display:none;"></div>
+      <div id="suggestionBanner" class="suggestion-banner"></div>
+    </div>
+
+    <div class="card">
+      <h2>关于本工具</h2>
+      <div style="margin-top:12px;">
+        <div>制作者：救援先锋玄德公</div>
+        <div style="font-size:14px; color:var(--text-secondary); margin-top:6px;">
+          本工具专为搜救协调人员设计，用于快速估算失踪者潜在移动范围。
+        </div>
+        <button id="toggleAlgorithm" class="toggle-btn">
+          查看算法公式与说明
+        </button>
+        <div id="algorithmDetails" class="algorithm-details" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); font-size:15px; line-height:1.6;">
+          <h3 style="font-weight:600; margin-bottom:12px;">核心算法公式</h3>
+          <p><strong>基础步行速度 =</strong> 性别年龄基准 × 地形系数 × 天气系数 × 气温系数 × 受伤系数 × 负重系数</p>
+          <p><strong>理论移动时间 =</strong> 失踪时间 × 行走模式因子</p>
+          <p><strong>有效移动时间 =</strong> 
+            <span style="color:var(--text);">
+              若未勾选“夜间活动”：理论移动时间 − 夜间停走小时数（22:00–6:00）<br>
+              若勾选“夜间活动”：理论移动时间（不扣除夜间）
+            </span>
+          </p>
+          <p><strong>步行距离（km） =</strong> 基础步行速度 × 有效移动时间（小时） ÷ 1000</p>
+          <p><strong>建议搜索半径（km） =</strong> 步行距离 × 冗余系数</p>
+
+          <h3 style="font-weight:600; margin:16px 0 12px;">行走模式因子</h3>
+          <ul style="padding-left:20px; margin-bottom:12px;">
+            <li>间歇行走（默认）：0.4（约40%时间实际移动）</li>
+            <li>持续行走：1.0（全程不停）</li>
+          </ul>
+
+          <h3>个体状态修正系数</h3>
+          <ul style="padding-left:20px;">
+            <li>受伤状态：无伤(1.0)、轻伤(0.7)、中伤(0.5)、重伤(0.3)</li>
+            <li>负重情况：无负重(1.0)、轻装(0.9)、中等(0.8)、重装(0.6)</li>
+          </ul>
+
+          <h3>夜间停走规则</h3>
+          <ul style="padding-left:20px;">
+            <li>默认夜间时段：22:00 至次日 6:00</li>
+            <li>若<strong>未勾选“是否夜间活动”</strong>，此期间视为完全停止移动</li>
+            <li>若<strong>勾选“是否夜间活动”</strong>，则夜间时间按行走模式正常计入</li>
+            <li>系统自动根据“最后出现时间”和“失踪时长”精确计算夜间占比</li>
+          </ul>
+
+          <h3>地形系数说明</h3>
+          <ul style="padding-left:20px; margin-bottom:12px;">
+            <li>城市中心：1.0</li>
+            <li>城市郊区：0.85</li>
+            <li>乡镇/集镇：0.75</li>
+            <li>农村/村庄：0.70</li>
+            <li>林区/灌木丛：0.35</li>
+            <li>山地/野外：0.40</li>
+          </ul>
+
+          <h3>交通工具异常判定标准</h3>
+          <ul style="padding-left:20px;">
+            <li>地铁/轻轨 > 80 km → 异常</li>
+            <li>公交/混合交通 > 50 km → 异常</li>
+            <li>自行车 > 30 km → 异常</li>
+            <li>电动自行车 > 60 km → 异常</li>
+            <li><strong>步行 > 对应人群生理极限 → 异常</strong></li>
+          </ul>
+          <p>注：林区、山地、极端天气下公共交通及非机动车自动禁用。</p>
+        </div>
       </div>
     </div>
 
-    <canvas id="mapCanvas" width="400" height="400"></canvas>
+    <footer>
+      <div class="card">
+        <h2 style="font-size:18px; margin-bottom:12px;">使用声明（仅限专业搜救人员）</h2>
+        <ul style="padding-left:20px; font-size:15px; line-height:1.6; color:var(--text);">
+          <li>本工具<strong>仅作为现场指挥辅助参考</strong>，不得替代专业搜救决策系统或实地研判。</li>
+          <li>所有输出结果基于简化模型，<strong>未考虑个体行为差异、障碍物、路径可达性等复杂因素</strong>。</li>
+          <li>使用者须具备基本搜救知识，并结合地图、监控、通信定位等多源信息综合判断。</li>
+          <li>开发者不对因依赖本工具导致的行动偏差或后果承担任何责任。</li>
+        </ul>
+      </div>
+      <div style="text-align:center; font-size:13px; color:var(--text-secondary); margin-top:16px;">
+        © 2025 救援支援工具 | 内部专业用途 | 本地运行 · 无数据上传
+      </div>
+    </footer>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    // ========== 全局配置 ==========
+
+    const transitSpeeds = { 
+      subway: 35, 
+      bus: 20, 
+      mixed: 25, 
+      bike: 15,
+      ebike: 25
+    };
+
+    const TRANSIT_THRESHOLDS = {
+      subway: 80,
+      bus: 50,
+      mixed: 50,
+      bike: 30,
+      ebike: 60
+    };
+
+    const WALK_MODE_FACTORS = {
+      continuous: 1.0,
+      intermittent: 0.4
+    };
+
+    const INJURY_FACTORS = {
+      none: 1.0,
+      minor: 0.7,
+      moderate: 0.5,
+      severe: 0.3
+    };
+
+    const LOAD_FACTORS = {
+      none: 1.0,
+      light: 0.9,
+      medium: 0.8,
+      heavy: 0.6
+    };
+
+    const WALK_LIMITS = {
+      child: { male: 10, female: 8 },
+      teen: { male: 30, female: 25 },
+      adult: { male: 50, female: 45 },
+      senior: { male: 20, female: 15 }
+    };
+
+    function getAgeGroup(age) {
+      if (age < 12) return 'child';
+      if (age <= 17) return 'teen';
+      if (age <= 64) return 'adult';
+      return 'senior';
+    }
+
+    function getBaseWalkSpeed(age, gender) {
+      if (age < 12) return 40;
+      if (age >= 65) return gender === 'male' ? 45 : 40;
+      return gender === 'male' ? 75 : 70;
+    }
+
+    function applyTerrainModifier(speed, terrain) {
+      switch (terrain) {
+        case 'city': return speed;
+        case 'suburb': return speed * 0.85;
+        case 'town': return speed * 0.75;
+        case 'village': return speed * 0.70;
+        case 'forest': return speed * 0.35;
+        case 'mountain': return speed * 0.40;
+        default: return speed;
+      }
+    }
+
+    function applyWeatherModifier(speed, weather) {
+      switch (weather) {
+        case 'clear': return speed;
+        case 'rain': return speed * 0.8;
+        case 'snow':
+        case 'extreme': return speed * 0.3;
+        default: return speed;
+      }
+    }
+
+    function applyTempModifier(speed, temp) {
+      return temp === 'normal' ? speed : speed * 0.9;
+    }
+
+    /**
+     * 计算夜间停走小时数（22:00–6:00）
+     */
+    function calculateNightHours(lastSeenTime, durationHours) {
+      const NIGHT_START = 22;
+      const NIGHT_END = 6;
+
+      const [h, m] = lastSeenTime.split(':').map(Number);
+      let currentHour = h + m / 60;
+      let nightHours = 0;
+      let elapsed = 0;
+
+      while (elapsed < Math.floor(durationHours)) {
+        if ((currentHour >= NIGHT_START) || (currentHour < NIGHT_END)) {
+          nightHours += 1;
+        }
+        currentHour = (currentHour + 1) % 24;
+        elapsed += 1;
+      }
+
+      const fractional = durationHours % 1;
+      if (fractional > 0 && elapsed < durationHours) {
+        if ((currentHour >= NIGHT_START) || (currentHour < NIGHT_END)) {
+          nightHours += fractional;
+        }
+      }
+
+      return Math.min(nightHours, durationHours);
+    }
+
+    function createResultItem(label, value, status = 'normal') {
+      const item = document.createElement('div');
+      item.className = 'result-item';
+      
+      const labelEl = document.createElement('div');
+      labelEl.className = 'result-item-label';
+      labelEl.textContent = label;
+      
+      const valueEl = document.createElement('div');
+      valueEl.className = 'result-item-value';
+
+      if (status === 'unavailable') {
+        const tag = document.createElement('span');
+        tag.className = 'unavailable-tag';
+        tag.textContent = '不可用';
+        valueEl.appendChild(tag);
+      } else if (status === 'abnormal') {
+        valueEl.textContent = `${value} km`;
+        const tag = document.createElement('span');
+        tag.className = 'abnormal-tag';
+        tag.textContent = '异常';
+        valueEl.appendChild(tag);
+      } else {
+        valueEl.textContent = `${value} km`;
+      }
+
+      item.appendChild(labelEl);
+      item.appendChild(valueEl);
+      return item;
+    }
+
+    function calculateAndDisplay() {
+      // ========== 获取用户输入 ==========
+      const age = parseFloat(document.getElementById('ageInput').value) || 30;
+      const gender = document.querySelector('input[name="gender"]:checked').value;
+      const duration = parseFloat(document.getElementById('durationInput').value) || 6;
+      const lastSeenTime = document.getElementById('lastSeenTime').value || '14:00';
+      const isNightActive = document.getElementById('isNightActive').checked;
+      const walkMode = document.getElementById('walkMode').value;
+      const injuryLevel = document.getElementById('injuryLevel').value;
+      const loadLevel = document.getElementById('loadLevel').value;
+      const terrain = document.getElementById('terrainSelect').value;
+      const weather = document.getElementById('weatherSelect').value;
+      const temp = document.getElementById('tempSelect').value;
+      const customSpeedInput = document.getElementById('customSpeed').value;
+      const bufferInput = document.getElementById('radiusBuffer').value;
+      const radiusBuffer = parseFloat(bufferInput) || 1.2;
+
+      // ========== 基础步行速度 ==========
+      let walkSpeed = customSpeedInput ? parseFloat(customSpeedInput) : getBaseWalkSpeed(age, gender);
+
+      // ========== 环境与个体修正 ==========
+      walkSpeed = applyTerrainModifier(walkSpeed, terrain);
+      walkSpeed = applyWeatherModifier(walkSpeed, weather);
+      walkSpeed = applyTempModifier(walkSpeed, temp);
+      walkSpeed *= INJURY_FACTORS[injuryLevel] || 1.0;
+      walkSpeed *= LOAD_FACTORS[loadLevel] || 1.0;
+
+      // ========== 有效移动时间计算 ==========
+      const timeFactor = WALK_MODE_FACTORS[walkMode] || 0.4;
+      let theoreticalMoveHours = duration * timeFactor;
+      let effectiveMoveHours = theoreticalMoveHours;
+
+      if (!isNightActive) {
+        const nightHours = calculateNightHours(lastSeenTime, duration);
+        const lostNightMove = Math.min(theoreticalMoveHours, nightHours);
+        effectiveMoveHours = Math.max(0, theoreticalMoveHours - lostNightMove);
+      }
+
+      // ========== 距离计算 ==========
+      const walkDist = (walkSpeed * 60 * effectiveMoveHours) / 1000;
+      const radius = walkDist * radiusBuffer;
+
+      // ========== 交通工具可用性 ==========
+      const isRemoteArea = terrain === 'mountain' || terrain === 'forest';
+      const isSnowOrExtreme = weather === 'snow' || weather === 'extreme';
+
+      const subwayDist = terrain === 'city' ? transitSpeeds.subway * duration : null;
+      const busDist = !isRemoteArea ? transitSpeeds.bus * duration : null;
+      const mixedDist = !isRemoteArea ? transitSpeeds.mixed * duration : null;
+      const bikeDist = (!isRemoteArea && !isSnowOrExtreme) ? transitSpeeds.bike * duration : null;
+      const ebikeDist = (!isRemoteArea && !isSnowOrExtreme) ? transitSpeeds.ebike * duration : null;
+
+      const transportData = [
+        { key: 'subway', label: '地铁/轻轨', dist: subwayDist },
+        { key: 'bus', label: '公交', dist: busDist },
+        { key: 'mixed', label: '混合交通', dist: mixedDist },
+        { key: 'bike', label: '自行车', dist: bikeDist },
+        { key: 'ebike', label: '电动自行车', dist: ebikeDist }
+      ];
+
+      // ========== 渲染结果 ==========
+      const grid = document.getElementById('resultsGrid');
+      grid.innerHTML = '';
+
+      const ageGroup = getAgeGroup(age);
+      const maxWalkLimit = WALK_LIMITS[ageGroup][gender];
+      const isWalkAbnormalByPhysiology = walkDist > maxWalkLimit;
+      const walkStatus = isWalkAbnormalByPhysiology ? 'abnormal' : 'normal';
+
+      grid.appendChild(createResultItem('步行最大距离', walkDist.toFixed(1), walkStatus));
+      grid.appendChild(createResultItem('建议搜索半径', radius.toFixed(1)));
+
+      const abnormalList = [];
+      transportData.forEach(item => {
+        let status = 'normal';
+        let displayValue = '';
+        if (item.dist === null) {
+          status = 'unavailable';
+        } else {
+          displayValue = item.dist.toFixed(1);
+          if (item.dist > TRANSIT_THRESHOLDS[item.key]) {
+            status = 'abnormal';
+            abnormalList.push(`${item.label}（${displayValue} km）`);
+          }
+        }
+        grid.appendChild(createResultItem(item.label, displayValue, status));
+      });
+
+      // ========== 提示语 ==========
+      const warningEl = document.getElementById('transportWarning');
+      if (abnormalList.length > 0) {
+        warningEl.innerHTML = `<div class="suggestion-banner warning">以下交通工具行进距离超出常规服务范围，可能不具现实可行性：<br>${abnormalList.join('、')}</div>`;
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+
+      const banner = document.getElementById('suggestionBanner');
+      let suggestionText = '';
+      let bannerClass = '';
+
+      if (isWalkAbnormalByPhysiology) {
+        let limitDesc = '';
+        if (age < 12) limitDesc = `儿童（${age}岁）`;
+        else if (age <= 17) limitDesc = `青少年（${age}岁）`;
+        else if (age >= 65) limitDesc = `老年人（${age}岁）`;
+        else limitDesc = `${gender === 'male' ? '成年男性' : '成年女性'}（${age}岁）`;
+
+        const modeDesc = walkMode === 'continuous' ? '持续行走' : '间歇行走';
+        const nightDesc = isNightActive ? '（已启用夜间活动）' : '（夜间停走已扣除）';
+        suggestionText = `在“${modeDesc}”模式下${nightDesc}，估算步行距离为 ${walkDist.toFixed(1)} km，`;
+
+        suggestionText += `仍远超 ${limitDesc} 的生理合理极限（上限约 ${maxWalkLimit} km）。`;
+        suggestionText += ' 此结果高度异常，强烈建议：';
+        suggestionText += ' ① 核实失踪时间是否准确；② 排查交通工具使用（包括非机动车、顺风车）；';
+        suggestionText += ' ③ 立即协调公安调取监控、基站、卡口数据，评估是否存在被转移可能。';
+        bannerClass = 'warning';
+      } 
+      else if (walkDist > 20) {
+        suggestionText = '搜索半径较大（超过20公里），建议协调多支搜救队分区覆盖，并优先排查交通枢纽、医院、便利店等关键节点。';
+        bannerClass = '';
+      } 
+      else if (terrain === 'mountain') {
+        suggestionText = '地形为山地/野外，移动速度显著降低。建议集中力量在最后出现点周边5公里内进行网格化地毯式搜索，并注意悬崖、洞穴等危险区域。';
+        bannerClass = 'info';
+      } 
+      else if (terrain === 'forest') {
+        suggestionText = '地形为林区/灌木丛，植被密集、视线受阻、易迷路。建议组织熟悉当地地形的向导参与，使用无人机热成像辅助，并重点排查林间小道、水源地、猎人小屋等。';
+        bannerClass = 'info';
+      } 
+      else if (terrain === 'town' || terrain === 'village') {
+        suggestionText = '位于乡镇或农村区域，公共交通有限。建议联系当地村委会、卫生所、小卖部等获取目击线索，并扩大对农用车、摩托车、电动自行车等非正规交通工具的排查。';
+        bannerClass = '';
+      } 
+      else {
+        suggestionText = '搜索范围合理。建议以最后出现地点为中心，按建议半径组织地面队伍进行环形扩散搜索，并同步排查周边监控。';
+        bannerClass = '';
+      }
+
+      banner.textContent = suggestionText;
+      banner.className = 'suggestion-banner ' + bannerClass;
+      document.getElementById('resultCard').style.display = 'block';
+    }
+
+    // ========== 初始化 ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggle = document.getElementById('themeToggle');
+      const isDark = localStorage.getItem('theme') === 'dark';
+      if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+
+      themeToggle.addEventListener('click', () => {
+        const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+
+      document.getElementById('searchForm').addEventListener('submit', e => {
+        e.preventDefault();
+        calculateAndDisplay();
+      });
+
+      document.getElementById('toggleAlgorithm').addEventListener('click', () => {
+        const details = document.getElementById('algorithmDetails');
+        const btn = document.getElementById('toggleAlgorithm');
+        if (details.style.display === 'block') {
+          details.style.display = 'none';
+          btn.classList.remove('expanded');
+        } else {
+          details.style.display = 'block';
+          btn.classList.add('expanded');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
